@@ -19,8 +19,6 @@ android.minapi = 21
 android.ndk = 27c
 android.archs = arm64-v8a,armeabi-v7a
 
-android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
-
 icon.filename = %(source.dir)s/icon.png
 
 [buildozer]
