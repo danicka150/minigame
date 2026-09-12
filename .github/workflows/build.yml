@@ -2,34 +2,60 @@ name: Build APK
 
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout
+      - name: Получить исходники
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Установить зависимости
         run: |
-          sudo apt update
-          sudo apt install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
             git zip unzip openjdk-17-jdk \
-            python3-pip autoconf libtool pkg-config \
+            python3-pip python3-venv \
+            autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev
+            cmake libffi-dev libssl-dev
 
-      - name: Install Buildozer
+      - name: Установить Buildozer
         run: |
-          pip3 install --user buildozer cython==0.29.34
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user buildozer
+          python3 -m pip install --user "cython==0.29.34"
 
-      - name: Build APK
+      - name: Установить Android SDK
         run: |
-          ~/.local/bin/buildozer android debug
+          mkdir -p "$HOME/android-sdk/cmdline-tools"
+          cd "$HOME/android-sdk"
 
-      - name: Upload APK
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+          unzip -q tools.zip -d cmdline-tools
+          mv cmdline-tools/cmdline-tools cmdline-tools/latest
+
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/build-tools/35.0.0" >> $GITHUB_PATH
+
+      - name: Установить Android SDK компоненты
+        run: |
+          yes | sdkmanager --licenses || true
+
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Собрать APK
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          buildozer android debug
+
+      - name: Загрузить APK
         uses: actions/upload-artifact@v4
         with:
           name: Android APK
