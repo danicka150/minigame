@@ -35,38 +35,41 @@ jobs:
 
       - name: Подготовить Android SDK
         run: |
-          mkdir -p "$HOME/.buildozer/android/platform/android-sdk"
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
 
-          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
-          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          mkdir -p "$SDK/cmdline-tools"
 
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          cd "$SDK"
 
-          cd "$ANDROID_HOME"
-
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+          wget -q \
+            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+            -O tools.zip
 
           unzip -q tools.zip -d cmdline-tools
 
           mv cmdline-tools/cmdline-tools cmdline-tools/latest
 
-          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          # Buildozer ищет старый путь tools/bin
+          mkdir -p "$SDK/tools"
+
+          ln -sf "$SDK/cmdline-tools/latest/bin" "$SDK/tools/bin"
+
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$SDK/tools/bin" >> "$GITHUB_PATH"
 
       - name: Принять лицензии Android
         run: |
-          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
-          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
 
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          yes | "$SDK/tools/bin/sdkmanager" --licenses || true
 
       - name: Установить Android SDK
         run: |
-          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
-          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
 
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+          "$SDK/tools/bin/sdkmanager" \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
